@@ -32,13 +32,13 @@ def run(cfg):
     train_loader = Pix3D_Recon_dataloader(cfg.config, 'train')
     test_loader = Pix3D_Recon_dataloader(cfg.config, 'val')
 
-    loss = MonoSDFLoss(cfg.config)
+    loss = MonoSDFLoss(cfg.config, mode ='train')
     net = Model(cfg.config)
 
-    params = [{"params": net.get_1x_lr_params(), "lr": float(cfg.config['optimizer']['lr'] / 10)},
-                {"params": net.get_10x_lr_params(), "lr": float(cfg.config['optimizer']['lr'])}]
-    optimizer = torch.optim.Adam(params, lr=float(cfg.config["optimizer"]["lr"]),
+    optimizer = torch.optim.Adam(net.parameters(), lr=float(cfg.config["optimizer"]["lr"]),
                                          betas=(cfg.config["optimizer"]["beta1"], cfg.config["optimizer"]["beta2"]))
+    net = nn.DataParallel(net)
+    net = net.to(device)
     net = net.to(device)
     scheduler=torch.optim.lr_scheduler.MultiStepLR(optimizer,cfg.config["scheduler"]["milestone"],gamma=cfg.config['scheduler']['gamma'])
 
